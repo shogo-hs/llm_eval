@@ -14,7 +14,8 @@ from evaluator import BaseMetric, BaseDataset, BaseLLM, BaseEvaluator
 from evaluator.datasets import JasterDataset, DatasetFactory
 from evaluator.llm import LocalLLM, LLMFactory
 from evaluator.evaluator import JasterEvaluator, EvaluatorFactory
-from evaluator.metrics import ExactMatch, MetricFactory
+from evaluator.metrics import ExactMatch
+from evaluator.metrics_factory import MetricFactory
 
 
 class TestJasterDataset(unittest.TestCase):
@@ -107,6 +108,20 @@ class TestMetrics(unittest.TestCase):
         
         # 空白を除去するケース
         self.assertEqual(metric.calculate(" テスト ", "テスト"), 1.0)
+    
+    def test_metric_factory(self):
+        """
+        評価指標ファクトリーのテスト
+        """
+        # インスタンス生成のテスト
+        metric = MetricFactory.create("exact_match")
+        self.assertIsInstance(metric, ExactMatch)
+        
+        # リスト生成のテスト
+        metrics = MetricFactory.create_from_list(["exact_match", "char_f1"])
+        self.assertEqual(len(metrics), 2)
+        self.assertEqual(metrics[0].name, "exact_match")
+        self.assertEqual(metrics[1].name, "char_f1")
 
 
 class TestLocalLLM(unittest.IsolatedAsyncioTestCase):

@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from .base import BaseEvaluator, BaseDataset, BaseLLM, BaseMetric
-from .metrics import MetricFactory
+from .metrics_factory import MetricFactory
 
 
 class JasterEvaluator(BaseEvaluator):

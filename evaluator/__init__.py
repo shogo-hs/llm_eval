@@ -4,8 +4,9 @@ LLM評価プラットフォームパッケージ
 from .base import BaseMetric, BaseDataset, BaseLLM, BaseEvaluator
 from .metrics import (
     ExactMatch, ExactMatchFigure, CharF1, SetF1, BLEUScore, 
-    ContainsAnswer, MetricFactory
+    ContainsAnswer
 )
+from .metrics_factory import MetricFactory
 from .datasets import JasterDataset, DatasetFactory
 from .llm import LocalLLM, LLMFactory
 from .evaluator import JasterEvaluator, EvaluatorFactory

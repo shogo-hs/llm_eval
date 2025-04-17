@@ -16,7 +16,7 @@ from evaluator import BaseMetric, BaseDataset, BaseLLM, BaseEvaluator
 from evaluator.datasets import DatasetFactory
 from evaluator.llm import LLMFactory
 from evaluator.evaluator import EvaluatorFactory
-from evaluator.metrics import MetricFactory
+from evaluator.metrics_factory import MetricFactory
 
 
 async def evaluate_dataset(
