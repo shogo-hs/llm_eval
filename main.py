@@ -23,6 +23,7 @@ async def evaluate_dataset(
     dataset_path: Path,
     model_name: str,
     output_dir: Path,
+    dataset_type: str = "auto",
     few_shot_count: int = 0,
     few_shot_path: Optional[Path] = None,
     batch_size: int = 5,
@@ -37,6 +38,7 @@ async def evaluate_dataset(
         dataset_path: データセットパス
         model_name: モデル名
         output_dir: 出力ディレクトリ
+        dataset_type: データセットタイプ（"auto", "jaster", "jbbq"）
         few_shot_count: Few-shotサンプル数
         few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
         batch_size: バッチサイズ
@@ -50,7 +52,16 @@ async def evaluate_dataset(
     try:
         # データセットの作成
         dataset_name = dataset_path.stem
-        dataset = DatasetFactory.create("jaster", dataset_name, dataset_path, few_shot_path)
+        
+        # データセットタイプの自動判定
+        if dataset_type == "auto":
+            # ファイル名やデータ内容からデータセットタイプを推定
+            if "jbbq" in dataset_name.lower():
+                dataset_type = "jbbq"
+            else:
+                dataset_type = "jaster"
+        
+        dataset = DatasetFactory.create(dataset_type, dataset_name, dataset_path, few_shot_path)
         
         # LLMクライアントの作成
         llm = LLMFactory.create(
@@ -63,7 +74,7 @@ async def evaluate_dataset(
         
         # 評価ツールの作成
         evaluator = EvaluatorFactory.create(
-            "jaster",
+            dataset_type,
             dataset,
             llm,
             few_shot_count=few_shot_count,
@@ -71,7 +82,7 @@ async def evaluate_dataset(
             batch_size=batch_size
         )
         
-        print(f"評価開始: {dataset_name}")
+        print(f"評価開始: {dataset_name} (タイプ: {dataset_type})")
         
         # 評価の実行
         results = await evaluator.evaluate()
@@ -135,6 +146,13 @@ async def main():
     )
     
     parser.add_argument(
+        "--dataset-type",
+        choices=["auto", "jaster", "jbbq"],
+        default="auto",
+        help="データセットタイプ（自動判定、jaster、jbbq）"
+    )
+    
+    parser.add_argument(
         "--batch-size", "-b",
         type=int,
         default=5,
@@ -195,6 +213,7 @@ async def main():
             dataset_path,
             args.model,
             output_dir,
+            args.dataset_type,
             args.few_shot,
             few_shot_path,
             args.batch_size,
@@ -218,6 +237,7 @@ async def main():
                 dataset_file,
                 args.model,
                 output_dir,
+                args.dataset_type,
                 args.few_shot,
                 few_shot_path,
                 args.batch_size,

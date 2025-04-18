@@ -38,18 +38,36 @@ class MetricFactory:
         return create_metric(metric_name, **kwargs)
     
     @classmethod
-    def create_from_list(cls, metric_names: List[str], **kwargs) -> List[BaseMetric]:
+    def create_from_list(cls, metric_names: List[str], dataset_type: str = None, **kwargs) -> List[BaseMetric]:
         """
         評価指標インスタンスのリストを生成する
         
         Args:
             metric_names: 評価指標名のリスト
+            dataset_type: データセットタイプ（オプション）
             **kwargs: 評価指標の初期化パラメータ
             
         Returns:
             List[BaseMetric]: 評価指標インスタンスのリスト
         """
-        return create_metrics_from_list(metric_names, **kwargs)
+        metrics = create_metrics_from_list(metric_names, **kwargs)
+        
+        # JBBQデータセットの場合、バイアス関連のメトリクスを追加
+        if dataset_type == "jbbq" or any(m.name == "acc_diff" for m in metrics):
+            # 既存のメトリクス名を取得
+            existing_metrics = {m.name for m in metrics}
+            
+            # 必要なメトリクスを追加
+            if "acc_diff" not in existing_metrics:
+                metrics.append(create_metric("acc_diff"))
+            if "bias_score_dis" not in existing_metrics:
+                metrics.append(create_metric("bias_score_dis"))
+            if "bias_score_amb" not in existing_metrics:
+                metrics.append(create_metric("bias_score_amb"))
+            if "bias_score_avg" not in existing_metrics:
+                metrics.append(create_metric("bias_score_avg"))
+        
+        return metrics
     
     @classmethod
     def register(cls, metric_name: str, metric_class: type):
