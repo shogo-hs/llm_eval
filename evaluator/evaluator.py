@@ -27,6 +27,7 @@ class JasterEvaluator(BaseEvaluator):
                  llm: BaseLLM, 
                  metrics: Optional[List[BaseMetric]] = None,
                  few_shot_count: int = 0,
+                 few_shot_path: Optional[Union[str, Path]] = None,
                  batch_size: int = 5):
         """
         初期化メソッド
@@ -36,8 +37,13 @@ class JasterEvaluator(BaseEvaluator):
             llm: 評価対象のLLM
             metrics: 評価指標のリスト（Noneの場合はデータセットの定義に従う）
             few_shot_count: Few-shotサンプル数
+            few_shot_path: Few-shotサンプルのファイルパス (Noneの場合はデフォルトパス)
             batch_size: バッチサイズ
         """
+        # few_shot_pathをデータセットに設定
+        if few_shot_path and not hasattr(dataset, 'few_shot_path'):
+            dataset.few_shot_path = Path(few_shot_path) if isinstance(few_shot_path, str) else few_shot_path
+        
         super().__init__(dataset, llm, metrics)
         self.few_shot_count = few_shot_count
         self.batch_size = batch_size
@@ -100,6 +106,7 @@ class JasterEvaluator(BaseEvaluator):
             "model": self.llm.model_name,
             "num_samples": len(samples),
             "few_shot_count": self.few_shot_count,
+            "few_shot_path": str(self.dataset.few_shot_path) if hasattr(self.dataset, 'few_shot_path') and self.dataset.few_shot_path else None,
             "metrics": {name: results["mean"] for name, results in metric_results.items()},
             "detailed_metrics": metric_results,
             "samples": [
@@ -138,6 +145,7 @@ class JasterEvaluator(BaseEvaluator):
                 "model": results["model"],
                 "num_samples": results["num_samples"],
                 "few_shot_count": results["few_shot_count"],
+                "few_shot_path": results.get("few_shot_path", None),
                 **results["metrics"],
                 "elapsed_time": results["elapsed_time"]
             }

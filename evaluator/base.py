@@ -49,19 +49,20 @@ class BaseDataset(ABC):
     全てのデータセットはこのクラスを継承して実装する必要がある
     """
     
-    def __init__(self, name: str, data_path: Union[str, Path]):
+    def __init__(self, name: str, data_path: Union[str, Path], few_shot_path: Optional[Union[str, Path]] = None):
         """
         初期化メソッド
         
         Args:
             name: データセット名
             data_path: データセットファイルパス
+            few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
         """
         self.name = name
         self.data_path = Path(data_path) if isinstance(data_path, str) else data_path
+        self.few_shot_path = Path(few_shot_path) if isinstance(few_shot_path, str) and few_shot_path else None
         self._data = None
         self._instruction = None
-        self._few_shots = None
         self._metrics = None
         
     @property
@@ -89,18 +90,6 @@ class BaseDataset(ABC):
         return self._instruction
     
     @property
-    def few_shots(self) -> List[Dict[str, str]]:
-        """
-        Few-shotサンプルを取得する
-        
-        Returns:
-            List[Dict[str, str]]: Few-shotサンプル
-        """
-        if self._few_shots is None:
-            self._load_data()
-        return self._few_shots
-    
-    @property
     def metrics(self) -> List[str]:
         """
         評価指標のリストを取得する
@@ -123,7 +112,6 @@ class BaseDataset(ABC):
             self._data = json.load(f)
         
         self._instruction = self._data.get("instruction", "")
-        self._few_shots = self._data.get("few_shots", [])
         self._metrics = self._data.get("metrics", [])
     
     @abstractmethod

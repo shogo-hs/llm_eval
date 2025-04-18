@@ -24,6 +24,7 @@ async def evaluate_dataset(
     model_name: str,
     output_dir: Path,
     few_shot_count: int = 0,
+    few_shot_path: Optional[Path] = None,
     batch_size: int = 5,
     api_url: str = "http://192.168.3.43:8000/v1/chat/completions",
     temperature: float = 0.7,
@@ -37,6 +38,7 @@ async def evaluate_dataset(
         model_name: モデル名
         output_dir: 出力ディレクトリ
         few_shot_count: Few-shotサンプル数
+        few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
         batch_size: バッチサイズ
         api_url: ローカルLLM API URL
         temperature: 生成の温度
@@ -48,7 +50,7 @@ async def evaluate_dataset(
     try:
         # データセットの作成
         dataset_name = dataset_path.stem
-        dataset = DatasetFactory.create("jaster", dataset_name, dataset_path)
+        dataset = DatasetFactory.create("jaster", dataset_name, dataset_path, few_shot_path)
         
         # LLMクライアントの作成
         llm = LLMFactory.create(
@@ -65,6 +67,7 @@ async def evaluate_dataset(
             dataset,
             llm,
             few_shot_count=few_shot_count,
+            few_shot_path=few_shot_path,
             batch_size=batch_size
         )
         
@@ -126,6 +129,12 @@ async def main():
     )
     
     parser.add_argument(
+        "--few-shot-path", "-p",
+        default=None,
+        help="Few-shotサンプルのファイルパスまたはディレクトリ (未指定の場合は使用しない)"
+    )
+    
+    parser.add_argument(
         "--batch-size", "-b",
         type=int,
         default=5,
@@ -168,6 +177,7 @@ async def main():
     # パスの解決
     dataset_path = Path(args.dataset)
     output_dir = Path(args.output)
+    few_shot_path = Path(args.few_shot_path) if args.few_shot_path else None
     
     if not dataset_path.exists():
         print(f"エラー: 指定されたデータセットパスが存在しません: {dataset_path}")
@@ -175,6 +185,7 @@ async def main():
     
     print(f"データセットパス: {dataset_path}")
     print(f"出力ディレクトリ: {output_dir}")
+    print(f"Few-shotパス: {few_shot_path}")
     print(f"API URL: {args.api_url}")
     
     # データセットの評価
@@ -185,6 +196,7 @@ async def main():
             args.model,
             output_dir,
             args.few_shot,
+            few_shot_path,
             args.batch_size,
             args.api_url,
             args.temperature,
@@ -207,6 +219,7 @@ async def main():
                 args.model,
                 output_dir,
                 args.few_shot,
+                few_shot_path,
                 args.batch_size,
                 args.api_url,
                 args.temperature,
@@ -222,6 +235,8 @@ async def main():
                 "model": args.model,
                 "timestamp": datetime.now().isoformat(),
                 "num_datasets": len(results),
+                "few_shot_count": args.few_shot,
+                "few_shot_path": str(few_shot_path) if few_shot_path else None,
                 "metrics": {
                     dataset_name: {
                         metric_name: metric_value

@@ -16,15 +16,16 @@ class JasterDataset(BaseDataset):
     Jasterベンチマークで定義されたJSON形式のデータセットを読み込み、評価に使用する
     """
     
-    def __init__(self, name: str, data_path: Union[str, Path]):
+    def __init__(self, name: str, data_path: Union[str, Path], few_shot_path: Optional[Union[str, Path]] = None):
         """
         初期化メソッド
         
         Args:
             name: データセット名
             data_path: データセットファイルパス
+            few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
         """
-        super().__init__(name, data_path)
+        super().__init__(name, data_path, few_shot_path)
         self._samples = None
     
     def get_samples(self) -> List[Dict[str, str]]:
@@ -48,28 +49,77 @@ class JasterDataset(BaseDataset):
         """
         return self.data.get("output_length", None)
     
-    def get_prompt(self, sample_input: str, few_shot_count: int = 0) -> str:
+    def get_few_shot_messages(self, num_few_shots: int = 0) -> List[Dict[str, str]]:
+        """
+        Few-shotサンプルを取得する
+        
+        Args:
+            num_few_shots: 使用するFew-shotサンプル数
+            
+        Returns:
+            List[Dict[str, str]]: Few-shotサンプルのリスト (role, contentのペア)
+        """
+        if num_few_shots <= 0 or self.few_shot_path is None or not self.few_shot_path.exists():
+            return []
+        
+        # few_shot_pathが親ディレクトリの場合は、同じファイル名のtrainデータを参照
+        target_few_shot_path = self.few_shot_path
+        if target_few_shot_path.is_dir():
+            target_few_shot_path = target_few_shot_path / "train" / self.data_path.name
+        
+        if not target_few_shot_path.exists():
+            print(f"Few-shot path not found: {target_few_shot_path}")
+            return []
+        
+        with open(target_few_shot_path, "r", encoding="utf-8") as f:
+            few_shot_data = json.load(f)
+        
+        samples = few_shot_data.get("samples", [])
+        if not samples:
+            return []
+        
+        few_shot_messages = []
+        for i in range(min(num_few_shots, len(samples))):
+            few_shot_messages.append({"role": "user", "content": samples[i]["input"]})
+            few_shot_messages.append({"role": "assistant", "content": samples[i]["output"]})
+        
+        return few_shot_messages
+    
+    def get_prompt(self, sample_input: str, num_few_shots: int = 0) -> str:
         """
         プロンプトを生成する
         
         Args:
             sample_input: サンプルの入力
-            few_shot_count: 使用するFew-shotサンプル数
+            num_few_shots: 使用するFew-shotサンプル数
             
         Returns:
             str: 生成されたプロンプト
         """
-        prompt = self.instruction
+        messages = []
         
         # Few-shot サンプルを追加
-        if few_shot_count > 0 and few_shot_count <= len(self.few_shots):
-            shots = self.few_shots[:few_shot_count]
-            for shot in shots:
-                prompt += f"\n\n{shot['input']}\n{shot['output']}"
+        few_shot_messages = self.get_few_shot_messages(num_few_shots)
+        if few_shot_messages:
+            messages.extend(few_shot_messages)
         
         # 評価対象の入力を追加
-        prompt += f"\n\n{sample_input}"
-        return prompt
+        messages.append({"role": "user", "content": sample_input})
+        
+        # 最初のメッセージに指示を追加
+        if messages and self.instruction:
+            first_content = messages[0]["content"]
+            messages[0]["content"] = f"{self.instruction}\n\n{first_content}"
+        
+        # メッセージをプロンプト形式に変換
+        prompt = ""
+        for msg in messages:
+            if msg["role"] == "user":
+                prompt += f"\n\nユーザー: {msg['content']}"
+            else:
+                prompt += f"\n\nアシスタント: {msg['content']}"
+        
+        return prompt.strip()
 
 
 class DatasetFactory:
@@ -84,7 +134,7 @@ class DatasetFactory:
     }
     
     @classmethod
-    def create(cls, dataset_type: str, name: str, data_path: Union[str, Path]) -> BaseDataset:
+    def create(cls, dataset_type: str, name: str, data_path: Union[str, Path], few_shot_path: Optional[Union[str, Path]] = None) -> BaseDataset:
         """
         データセットインスタンスを生成する
         
@@ -92,6 +142,7 @@ class DatasetFactory:
             dataset_type: データセットタイプ
             name: データセット名
             data_path: データセットファイルパス
+            few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
             
         Returns:
             BaseDataset: データセットインスタンス
@@ -103,7 +154,7 @@ class DatasetFactory:
             raise ValueError(f"Unsupported dataset type: {dataset_type}")
         
         dataset_class = cls._dataset_map[dataset_type]
-        return dataset_class(name, data_path)
+        return dataset_class(name, data_path, few_shot_path)
     
     @classmethod
     def register(cls, dataset_type: str, dataset_class: type):
