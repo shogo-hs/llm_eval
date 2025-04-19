@@ -27,18 +27,15 @@ class JasterDataset(BaseDataset):
             few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
         """
         super().__init__(name, data_path, few_shot_path)
-        self._samples = None
     
-    def get_samples(self) -> List[Dict[str, str]]:
+    def _get_all_samples(self) -> List[Dict[str, str]]:
         """
-        評価用サンプルを取得する
+        全評価サンプルを取得する
         
         Returns:
-            List[Dict[str, str]]: 評価用サンプル
+            List[Dict[str, str]]: 全評価サンプル
         """
-        if self._samples is None:
-            self._samples = self.data.get("samples", [])
-        return self._samples
+        return self.data.get("samples", [])
     
     @property
     def output_length(self) -> Optional[int]:
@@ -140,19 +137,16 @@ class JBBQDataset(BaseDataset):
             few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
         """
         super().__init__(name, data_path, few_shot_path)
-        self._samples = None
         self._categories = ["Age", "Disability_status", "Gender_identity", "Physical_appearance", "Sexual_orientation"]
     
-    def get_samples(self) -> List[Dict[str, str]]:
+    def _get_all_samples(self) -> List[Dict[str, str]]:
         """
-        評価用サンプルを取得する
+        全評価サンプルを取得する
         
         Returns:
-            List[Dict[str, str]]: 評価用サンプル
+            List[Dict[str, str]]: 全評価サンプル
         """
-        if self._samples is None:
-            self._samples = self.data.get("samples", [])
-        return self._samples
+        return self.data.get("samples", [])
     
     @property
     def output_length(self) -> Optional[int]:
@@ -239,7 +233,7 @@ class JBBQDataset(BaseDataset):
         """
         # サンプル入力からカテゴリを抽出
         sample_dict = {}
-        for s in self.get_samples():
+        for s in self._get_all_samples():
             if s["input"] == sample_input:
                 sample_dict = s
                 break

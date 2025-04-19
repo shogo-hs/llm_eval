@@ -28,7 +28,8 @@ class JasterEvaluator(BaseEvaluator):
                  metrics: Optional[List[BaseMetric]] = None,
                  few_shot_count: int = 0,
                  few_shot_path: Optional[Union[str, Path]] = None,
-                 batch_size: int = 5):
+                 batch_size: int = 5,
+                 max_samples: Optional[int] = None):
         """
         初期化メソッド
         
@@ -39,6 +40,7 @@ class JasterEvaluator(BaseEvaluator):
             few_shot_count: Few-shotサンプル数
             few_shot_path: Few-shotサンプルのファイルパス (Noneの場合はデフォルトパス)
             batch_size: バッチサイズ
+            max_samples: サンプリング数（Noneの場合は全サンプルを使用）
         """
         # few_shot_pathをデータセットに設定
         if few_shot_path and not hasattr(dataset, 'few_shot_path'):
@@ -47,6 +49,7 @@ class JasterEvaluator(BaseEvaluator):
         super().__init__(dataset, llm, metrics)
         self.few_shot_count = few_shot_count
         self.batch_size = batch_size
+        self.max_samples = max_samples
         
         # 評価指標がNoneの場合は、データセットの定義に従う
         if self._metrics is None:
@@ -65,8 +68,9 @@ class JasterEvaluator(BaseEvaluator):
         # 評価開始時刻
         start_time = time.time()
         
-        # サンプルを取得
-        samples = self.dataset.get_samples()
+        # サンプルを取得（サンプリング機能を使用）
+        max_samples = kwargs.pop("max_samples", self.max_samples)
+        samples = self.dataset.get_samples(max_samples)
         
         # プロンプトを生成
         prompts = []
@@ -166,7 +170,8 @@ class JBBQEvaluator(BaseEvaluator):
                  metrics: Optional[List[BaseMetric]] = None,
                  few_shot_count: int = 0,
                  few_shot_path: Optional[Union[str, Path]] = None,
-                 batch_size: int = 5):
+                 batch_size: int = 5,
+                 max_samples: Optional[int] = None):
         """
         初期化メソッド
         
@@ -177,6 +182,7 @@ class JBBQEvaluator(BaseEvaluator):
             few_shot_count: Few-shotサンプル数
             few_shot_path: Few-shotサンプルのファイルパス (Noneの場合はデフォルトパス)
             batch_size: バッチサイズ
+            max_samples: サンプリング数（Noneの場合は全サンプルを使用）
         """
         # few_shot_pathをデータセットに設定
         if few_shot_path and not hasattr(dataset, 'few_shot_path'):
@@ -185,6 +191,7 @@ class JBBQEvaluator(BaseEvaluator):
         super().__init__(dataset, llm, metrics)
         self.few_shot_count = few_shot_count
         self.batch_size = batch_size
+        self.max_samples = max_samples
         
         # 評価指標がNoneの場合は、データセットの定義に従う
         if self._metrics is None:
@@ -203,8 +210,9 @@ class JBBQEvaluator(BaseEvaluator):
         # 評価開始時刻
         start_time = time.time()
         
-        # サンプルを取得
-        samples = self.dataset.get_samples()
+        # サンプルを取得（サンプリング機能を使用）
+        max_samples = kwargs.pop("max_samples", self.max_samples)
+        samples = self.dataset.get_samples(max_samples)
         
         # プロンプトを生成
         prompts = []

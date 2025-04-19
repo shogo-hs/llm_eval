@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#\!/usr/bin/env python3
 """
 LLM評価プラットフォームのメインモジュール
 """
@@ -26,6 +26,7 @@ async def evaluate_dataset(
     dataset_type: str = "auto",
     few_shot_count: int = 0,
     few_shot_path: Optional[Path] = None,
+    max_samples: Optional[int] = None,
     batch_size: int = 5,
     api_url: str = "http://192.168.3.43:8000/v1/chat/completions",
     temperature: float = 0.7,
@@ -41,6 +42,7 @@ async def evaluate_dataset(
         dataset_type: データセットタイプ（"auto", "jaster", "jbbq"）
         few_shot_count: Few-shotサンプル数
         few_shot_path: Few-shotサンプルのファイルパス (Noneの場合は使用しない)
+        max_samples: サンプリング数（Noneの場合は全サンプルを使用）
         batch_size: バッチサイズ
         api_url: ローカルLLM API URL
         temperature: 生成の温度
@@ -79,10 +81,13 @@ async def evaluate_dataset(
             llm,
             few_shot_count=few_shot_count,
             few_shot_path=few_shot_path,
-            batch_size=batch_size
+            batch_size=batch_size,
+            max_samples=max_samples
         )
         
         print(f"評価開始: {dataset_name} (タイプ: {dataset_type})")
+        if max_samples is not None:
+            print(f"サンプリング数: {max_samples}")
         
         # 評価の実行
         results = await evaluator.evaluate()
@@ -180,6 +185,13 @@ async def main():
     )
     
     parser.add_argument(
+        "--max-samples", "-s",
+        type=int,
+        default=None,
+        help="最大サンプル数（デフォルト: 全サンプル）"
+    )
+    
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="デバッグモード（詳細なログ出力）"
@@ -205,6 +217,8 @@ async def main():
     print(f"出力ディレクトリ: {output_dir}")
     print(f"Few-shotパス: {few_shot_path}")
     print(f"API URL: {args.api_url}")
+    if args.max_samples is not None:
+        print(f"最大サンプル数: {args.max_samples}")
     
     # データセットの評価
     if dataset_path.is_file():
@@ -216,6 +230,7 @@ async def main():
             args.dataset_type,
             args.few_shot,
             few_shot_path,
+            args.max_samples,
             args.batch_size,
             args.api_url,
             args.temperature,
@@ -240,6 +255,7 @@ async def main():
                 args.dataset_type,
                 args.few_shot,
                 few_shot_path,
+                args.max_samples,
                 args.batch_size,
                 args.api_url,
                 args.temperature,
@@ -257,6 +273,7 @@ async def main():
                 "num_datasets": len(results),
                 "few_shot_count": args.few_shot,
                 "few_shot_path": str(few_shot_path) if few_shot_path else None,
+                "max_samples": args.max_samples,
                 "metrics": {
                     dataset_name: {
                         metric_name: metric_value

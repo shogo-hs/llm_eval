@@ -64,6 +64,7 @@ class BaseDataset(ABC):
         self._data = None
         self._instruction = None
         self._metrics = None
+        self._samples = None
         
     @property
     def data(self) -> Dict[str, Any]:
@@ -114,13 +115,28 @@ class BaseDataset(ABC):
         self._instruction = self._data.get("instruction", "")
         self._metrics = self._data.get("metrics", [])
     
-    @abstractmethod
-    def get_samples(self) -> List[Dict[str, str]]:
+    def get_samples(self, max_samples: Optional[int] = None) -> List[Dict[str, str]]:
         """
-        評価用サンプルを取得する
+        評価用サンプルを取得する（サンプリング機能付き）
         
+        Args:
+            max_samples: 最大サンプル数（Noneの場合は全てのサンプルを返す）
+            
         Returns:
             List[Dict[str, str]]: 評価用サンプル
+        """
+        samples = self._get_all_samples()
+        if max_samples is not None and max_samples > 0 and max_samples < len(samples):
+            return samples[:max_samples]
+        return samples
+    
+    @abstractmethod
+    def _get_all_samples(self) -> List[Dict[str, str]]:
+        """
+        全評価サンプルを取得する
+        
+        Returns:
+            List[Dict[str, str]]: 全評価サンプル
         """
         pass
 
