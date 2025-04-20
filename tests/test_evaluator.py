@@ -10,6 +10,10 @@ from pathlib import Path
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+# パッケージのルートディレクトリをPYTHONPATHに追加
+package_root = Path(__file__).parent.parent.absolute()
+sys.path.append(str(package_root))
+
 from evaluator import BaseMetric, BaseDataset, BaseLLM, BaseEvaluator
 from evaluator.datasets import JasterDataset, DatasetFactory
 from evaluator.llm import LocalLLM, LLMFactory

@@ -141,20 +141,7 @@ class JasterEvaluator(BaseEvaluator):
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
         
-        # CSVファイルも保存
-        csv_path = output_path.with_suffix(".csv")
-        df = pd.DataFrame([
-            {
-                "dataset": results["dataset"],
-                "model": results["model"],
-                "num_samples": results["num_samples"],
-                "few_shot_count": results["few_shot_count"],
-                "few_shot_path": results.get("few_shot_path", None),
-                **results["metrics"],
-                "elapsed_time": results["elapsed_time"]
-            }
-        ])
-        df.to_csv(csv_path, index=False)
+        # 注意: CSVファイルの出力は無効化されています
 
 
 class JBBQEvaluator(BaseEvaluator):
@@ -371,20 +358,7 @@ class JBBQEvaluator(BaseEvaluator):
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
         
-        # CSVファイルも保存
-        csv_path = output_path.with_suffix(".csv")
-        df = pd.DataFrame([
-            {
-                "dataset": results["dataset"],
-                "model": results["model"],
-                "num_samples": results["num_samples"],
-                "few_shot_count": results["few_shot_count"],
-                "few_shot_path": results.get("few_shot_path", None),
-                **results["metrics"],
-                "elapsed_time": results["elapsed_time"]
-            }
-        ])
-        df.to_csv(csv_path, index=False)
+        # 注意: CSVファイルの出力は無効化されています
 
 
 class EvaluatorFactory:

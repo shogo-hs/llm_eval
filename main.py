@@ -97,7 +97,9 @@ async def evaluate_dataset(
         
         # 結果の保存
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = output_dir / f"{dataset_name}_{model_name}_{timestamp}.json"
+        # ファイル名にn-shot情報を追加
+        shot_info = f"{few_shot_count}shot" if few_shot_count > 0 else "0shot"
+        output_path = output_dir / f"{dataset_name}_{model_name}_{shot_info}_{timestamp}.json"
         evaluator.save_results(results, output_path)
         
         print(f"評価結果を保存しました: {output_path}")
@@ -284,7 +286,9 @@ async def main():
             }
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            summary_path = output_dir / f"summary_{args.model}_{timestamp}.json"
+            # ファイル名にn-shot情報を追加
+            shot_info = f"{args.few_shot}shot" if args.few_shot > 0 else "0shot"
+            summary_path = output_dir / f"summary_{args.model}_{shot_info}_{timestamp}.json"
             with open(summary_path, "w", encoding="utf-8") as f:
                 json.dump(summary, f, ensure_ascii=False, indent=2)
             

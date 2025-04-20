@@ -7,7 +7,7 @@ import asyncio
 from pathlib import Path
 
 # パッケージのルートディレクトリをPYTHONPATHに追加
-package_root = Path(__file__).parent.absolute()
+package_root = Path(__file__).parent.parent.absolute()
 sys.path.append(str(package_root))
 
 from evaluator.metrics_factory import MetricFactory
